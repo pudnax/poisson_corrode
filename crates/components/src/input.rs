@@ -2,10 +2,8 @@ use ahash::AHashMap;
 use glam::{vec2, Vec2};
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
-    event::{
-        DeviceEvent, ElementState, KeyboardInput, MouseButton, MouseScrollDelta,
-        VirtualKeyCode, WindowEvent,
-    },
+    event::{DeviceEvent, ElementState, KeyEvent, MouseButton, MouseScrollDelta, WindowEvent},
+    keyboard::{KeyCode, PhysicalKey},
     window::Window,
 };
 
@@ -16,19 +14,19 @@ pub struct KeyState {
 
 #[derive(Default, Clone, Debug)]
 pub struct KeyboardState {
-    keys_down: AHashMap<VirtualKeyCode, KeyState>,
+    keys_down: AHashMap<KeyCode, KeyState>,
 }
 
 impl KeyboardState {
-    pub fn is_down(&self, key: VirtualKeyCode) -> bool {
+    pub fn is_down(&self, key: KeyCode) -> bool {
         self.get_down(key).is_some()
     }
 
-    pub fn was_just_pressed(&self, key: VirtualKeyCode) -> bool {
+    pub fn was_just_pressed(&self, key: KeyCode) -> bool {
         self.get_down(key).map(|s| s.ticks == 1).unwrap_or_default()
     }
 
-    pub fn get_down(&self, key: VirtualKeyCode) -> Option<&KeyState> {
+    pub fn get_down(&self, key: KeyCode) -> Option<&KeyState> {
         self.keys_down.get(&key)
     }
 }
@@ -111,7 +109,7 @@ impl KeyMap {
 }
 
 pub struct KeyboardMap {
-    bindings: Vec<(VirtualKeyCode, KeyMap)>,
+    bindings: Vec<(KeyCode, KeyMap)>,
 }
 
 impl Default for KeyboardMap {
@@ -127,7 +125,7 @@ impl KeyboardMap {
         }
     }
 
-    pub fn bind(mut self, key: VirtualKeyCode, map: KeyMap) -> Self {
+    pub fn bind(mut self, key: KeyCode, map: KeyMap) -> Self {
         self.bindings.push((key, map));
         self
     }
@@ -216,9 +214,9 @@ impl Input {
                 }
             }
             WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        virtual_keycode: Some(keycode),
+                event:
+                    KeyEvent {
+                        physical_key: PhysicalKey::Code(keycode),
                         state,
                         ..
                     },

@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 
 use ahash::AHashMap;
+use wgpu::PipelineCompilationOptions;
 
 use crate::world::World;
 
@@ -31,7 +32,7 @@ impl Blitter {
             min_filter: wgpu::FilterMode::Linear,
             mipmap_filter: wgpu::FilterMode::Linear,
             lod_min_clamp: 0.0,
-            lod_max_clamp: std::f32::MAX,
+            lod_max_clamp: f32::MAX,
             compare: None,
             anisotropy_clamp: 1,
             border_color: None,
@@ -95,10 +96,12 @@ impl Blitter {
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
-                    store: true,
+                    store: wgpu::StoreOp::Store,
                 },
             })],
             depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
         });
 
         render_pass.set_pipeline(pipeline);
@@ -186,10 +189,12 @@ impl Blitter {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
-                        store: true,
+                        store: wgpu::StoreOp::Store,
                     },
                 })],
                 depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
             });
 
             render_pass.set_pipeline(pipeline);
@@ -222,11 +227,13 @@ impl Blitter {
                 module: shader,
                 entry_point: "vs_main",
                 buffers: &[],
+                compilation_options: PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: shader,
                 entry_point,
                 targets: &[Some(format.into())],
+                compilation_options: PipelineCompilationOptions::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,

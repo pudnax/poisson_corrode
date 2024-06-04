@@ -1,9 +1,8 @@
 use std::{path::Path, vec};
 
 use ahash::AHashMap;
-use color_eyre::{
-    eyre::{eyre, Context},
-    Result,
+use eyre::{
+    Result, {eyre, Context},
 };
 
 mod conversions;

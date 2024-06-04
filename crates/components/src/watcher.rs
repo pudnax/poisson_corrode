@@ -1,4 +1,4 @@
-use color_eyre::eyre::Result;
+use eyre::Result;
 use notify_debouncer_mini::{DebounceEventResult, DebouncedEventKind};
 use winit::event_loop::EventLoopProxy;
 

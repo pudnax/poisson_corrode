@@ -1,10 +1,10 @@
 use dolly::prelude::{Position, YawPitch};
 use glam::Vec3;
-use winit::event::VirtualKeyCode;
 
 use components::{
     Camera, {Input, KeyboardMap, KeyboardState},
 };
+use winit::keyboard::KeyCode;
 
 pub enum StateAction {
     Screenshot,
@@ -50,7 +50,9 @@ impl AppState {
         }
 
         let moves = self.keyboard_map.map(&self.input.keyboard_state);
-        let move_vec = self.camera.rig.final_transform.rotation
+        let rotation = self.camera.rig.final_transform.rotation.into();
+        let position = self.camera.rig.final_transform.position.into();
+        let move_vec = rotation
             * Vec3::new(moves["move_right"], moves["move_up"], -moves["move_fwd"])
                 .clamp_length_max(1.0)
             * 4.0f32.powf(moves["boost"]);
@@ -62,13 +64,13 @@ impl AppState {
 
         self.camera.rig.update(dt as _);
 
-        self.camera.position = self.camera.rig.final_transform.position;
-        self.camera.rotation = self.camera.rig.final_transform.rotation;
+        self.camera.position = position;
+        self.camera.rotation = rotation;
 
-        if self.keyboard().was_just_pressed(VirtualKeyCode::F3) {
+        if self.keyboard().was_just_pressed(KeyCode::F3) {
             actions.push(StateAction::Screenshot);
         };
-        if self.keyboard().was_just_pressed(VirtualKeyCode::F4) {
+        if self.keyboard().was_just_pressed(KeyCode::F4) {
             if !self.recording {
                 actions.push(StateAction::StartRecording)
             } else {

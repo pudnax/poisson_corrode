@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use color_eyre::Result;
+use eyre::Result;
 use wgpu::util::align_to;
 
 use crate::{
@@ -38,13 +38,13 @@ impl ComputeUpdate {
     }
 }
 
-pub struct ComputeUpdateResourse<'a> {
+pub struct ComputeUpdateResource<'a> {
     pub idx_bind_group: &'a wgpu::BindGroup,
     pub dispatch_size: u32,
 }
 
 impl Pass for ComputeUpdate {
-    type Resources<'a> = ComputeUpdateResourse<'a>;
+    type Resources<'a> = ComputeUpdateResource<'a>;
 
     fn record(
         &self,
@@ -57,6 +57,7 @@ impl Pass for ComputeUpdate {
         let global_ubo = world.unwrap::<GlobalUniformBinding>();
         let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("Compute Update Pass"),
+            timestamp_writes: None,
         });
 
         cpass.set_pipeline(arena.get_pipeline(self.pipeline));

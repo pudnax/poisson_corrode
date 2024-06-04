@@ -1,9 +1,10 @@
 use std::time::Duration;
 
 use app::make_uv_sphere;
-use color_eyre::Result;
+use eyre::Result;
 use rand::Rng;
 use voidin::*;
+use winit::window::WindowAttributes;
 
 struct Model {
     visibility_pass: pass::visibility::Visibility,
@@ -156,7 +157,7 @@ impl Example for Model {
             self.taa_pass
                 .get_jitter(ctx.app_state.frame_count as u32, ctx.width, ctx.height);
 
-        let resources = pass::compute_update::ComputeUpdateResourse {
+        let resources = pass::compute_update::ComputeUpdateResource {
             idx_bind_group: &self.moving_instances_bind_group,
             dispatch_size: self.moving_instances.len() as u32,
         };
@@ -218,19 +219,19 @@ impl Example for Model {
             pass::postprocess::PostProcessResource { view_target },
         );
 
-        ctx.ui(|egui_ctx| {
-            egui::Window::new("debug").show(egui_ctx, |ui| {
-                ui.label(format!(
-                    "Fps: {:.04?}",
-                    Duration::from_secs_f64(ctx.app_state.dt)
-                ));
-            });
-        });
+        // ctx.ui(|egui_ctx| {
+        //     egui::Window::new("debug").show(egui_ctx, |ui| {
+        //         ui.label(format!(
+        //             "Fps: {:.04?}",
+        //             Duration::from_secs_f64(ctx.app_state.dt)
+        //         ));
+        //     });
+        // });
     }
 }
 
 fn main() -> Result<()> {
-    let window = WindowBuilder::new().with_inner_size(LogicalSize::new(1280, 1024));
+    let window = WindowAttributes::default().with_inner_size(LogicalSize::new(1280, 1024));
 
     let camera = Camera::new(vec3(2., 5., 12.), 0., -20.);
     run::<Model>(window, camera)

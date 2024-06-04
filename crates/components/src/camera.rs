@@ -127,13 +127,16 @@ impl Camera {
 
     pub fn build_projection_view_matrix(&self) -> (Mat4, Mat4) {
         let tr = self.rig.final_transform;
-        let view = Mat4::look_at_rh(tr.position, tr.position + tr.forward(), tr.up());
+        let position = tr.position.into();
+        let forward: Vec3 = tr.forward();
+        let view = Mat4::look_at_rh(position, position + forward, tr.up());
         let proj = Mat4::perspective_infinite_reverse_rh(Self::FOVY, self.aspect, Self::ZNEAR);
         (proj, view)
     }
 
     pub fn get_uniform(&self, previous: Option<&CameraUniform>) -> CameraUniform {
-        let pos = Vec4::from((self.rig.final_transform.position, 1.));
+        let position: Vec3 = self.rig.final_transform.position.into();
+        let pos = Vec4::from((position, 1.));
         let (mut projection, view) = self.build_projection_view_matrix();
         projection.z_axis[0] += self.jitter.x;
         projection.z_axis[1] += self.jitter.y;

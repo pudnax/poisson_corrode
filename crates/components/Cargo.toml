@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 winit = { workspace = true }
 wgpu = { workspace = true }
-color-eyre = { workspace = true }
+eyre = { workspace = true }
 log = { workspace = true }
 glam = { workspace = true }
 bytemuck = { workspace = true }

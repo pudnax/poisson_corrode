@@ -166,19 +166,20 @@ pub fn create_solid_color_texture(
             sample_count: 1,
             view_formats: &[],
         },
+        wgpu::util::TextureDataOrder::LayerMajor,
         bytemuck::bytes_of(&color),
     )
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct ImageDimentions {
+pub struct ImageDimensions {
     pub width: u32,
     pub height: u32,
     pub unpadded_bytes_per_row: u32,
     pub padded_bytes_per_row: u32,
 }
 
-impl ImageDimentions {
+impl ImageDimensions {
     pub fn new(width: u32, height: u32, align: u32) -> Self {
         let width = align_to(width, 2);
         let height = align_to(height, 2);
@@ -199,8 +200,8 @@ impl ImageDimentions {
     }
 }
 
-impl From<ImageDimentions> for wgpu::Extent3d {
-    fn from(value: ImageDimentions) -> Self {
+impl From<ImageDimensions> for wgpu::Extent3d {
+    fn from(value: ImageDimensions) -> Self {
         wgpu::Extent3d {
             width: value.width,
             height: value.height,

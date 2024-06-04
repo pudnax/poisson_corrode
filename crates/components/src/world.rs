@@ -1,6 +1,6 @@
 use ahash::AHashMap;
-use color_eyre::eyre::ContextCompat;
-use color_eyre::{eyre::eyre, Result};
+use eyre::ContextCompat;
+use eyre::{eyre, Result};
 use pretty_type_name::pretty_type_name;
 use std::any::Any;
 use std::marker::PhantomData;

@@ -84,7 +84,7 @@ impl TexturePool {
             min_filter: wgpu::FilterMode::Linear,
             mipmap_filter: wgpu::FilterMode::Linear,
             lod_min_clamp: 0.0,
-            lod_max_clamp: std::f32::MAX,
+            lod_max_clamp: f32::MAX,
             compare: None,
             anisotropy_clamp: 1,
             border_color: None,
@@ -182,12 +182,22 @@ fn default_textures(gpu: &Gpu) -> Vec<wgpu::TextureView> {
     };
     let ltc1 = gpu
         .device()
-        .create_texture_with_data(gpu.queue(), &ltc_desc, bytemuck::cast_slice(ltc::LTC1))
+        .create_texture_with_data(
+            gpu.queue(),
+            &ltc_desc,
+            wgpu::util::TextureDataOrder::LayerMajor,
+            bytemuck::cast_slice(ltc::LTC1),
+        )
         .create_view(&Default::default());
     ltc_desc.label = Some("LTC 2");
     let ltc2 = gpu
         .device()
-        .create_texture_with_data(gpu.queue(), &ltc_desc, bytemuck::cast_slice(ltc::LTC2))
+        .create_texture_with_data(
+            gpu.queue(),
+            &ltc_desc,
+            wgpu::util::TextureDataOrder::LayerMajor,
+            bytemuck::cast_slice(ltc::LTC2),
+        )
         .create_view(&Default::default());
 
     vec![white, black, ltc1, ltc2]

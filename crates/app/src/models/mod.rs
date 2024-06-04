@@ -1,8 +1,7 @@
 mod gltf_model;
 
-use color_eyre::{
-    eyre::{eyre, Context},
-    Result,
+use eyre::{
+    Result, {eyre, Context},
 };
 use glam::{Vec3, Vec4};
 use std::path::Path;

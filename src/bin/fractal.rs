@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use app::GlobalsBindGroup;
-use color_eyre::Result;
+use eyre::Result;
 use voidin::*;
 
 struct Triangle {
@@ -53,10 +53,12 @@ impl Example for Triangle {
                         b: 0.13,
                         a: 1.0,
                     }),
-                    store: true,
+                    store: wgpu::StoreOp::Store,
                 },
             })],
             depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
         });
 
         pass.set_pipeline(arena.get_pipeline(self.pipeline));
@@ -65,14 +67,14 @@ impl Example for Triangle {
         pass.draw(0..3, 0..1);
         drop(pass);
 
-        ctx.ui(|egui_ctx| {
-            egui::Window::new("debug").show(egui_ctx, |ui| {
-                ui.label(format!(
-                    "Fps: {:.04?}",
-                    Duration::from_secs_f64(ctx.app_state.dt)
-                ));
-            });
-        });
+        // ctx.ui(|egui_ctx| {
+        //     egui::Window::new("debug").show(egui_ctx, |ui| {
+        //         ui.label(format!(
+        //             "Fps: {:.04?}",
+        //             Duration::from_secs_f64(ctx.app_state.dt)
+        //         ));
+        //     });
+        // });
     }
 }
 

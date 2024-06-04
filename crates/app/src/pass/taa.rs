@@ -7,7 +7,7 @@ use crate::{
     pipeline::{ComputeHandle, ComputePipelineDescriptor, PipelineArena},
     CameraUniformBinding, GBuffer, ProfilerCommandEncoder, ViewTarget, DEFAULT_SAMPLER_DESC,
 };
-use color_eyre::Result;
+use eyre::Result;
 use components::{
     bind_group_layout::{BindGroupLayout, SingleTextureBindGroupLayout, WrappedBindGroupLayout},
     world::World,
@@ -326,6 +326,7 @@ impl Pass for Taa {
 
         let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("Reprojection Pass"),
+            timestamp_writes: None,
         });
 
         cpass.set_pipeline(arena.get_pipeline(self.reprojection_pipeline));
@@ -337,6 +338,7 @@ impl Pass for Taa {
 
         let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("Taa Pass"),
+            timestamp_writes: None,
         });
 
         cpass.set_pipeline(arena.get_pipeline(self.taa_pipeline));

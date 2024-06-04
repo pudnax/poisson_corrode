@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 wgpu = { workspace = true }
-color-eyre = { workspace = true }
+eyre = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
 glam = { workspace = true }
@@ -22,13 +22,13 @@ components = { path = "../components" }
 pools = { path = "../pools" }
 bvh = { path = "../bvh" }
 pollster = { version = "0.3.0", features = ["macro"] }
-wgpu-profiler = "0.14.2"
+wgpu-profiler = "0.17.0"
 slotmap = "1.0.6"
 gltf = "1.2.0"
-image = { version = "0.24.5", default-features = false, features = [
+image = { version = "0.25", default-features = false, features = [
 	"jpeg",
 	"png",
 ] }
-egui = "0.23.0"
-egui-winit = "0.23.0"
-egui-wgpu = "0.23.0"
+# egui = "0.27"
+# egui-winit = "0.27"
+# egui-wgpu = "0.27"

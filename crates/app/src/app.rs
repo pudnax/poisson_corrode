@@ -1,12 +1,12 @@
-use std::{cell::RefCell, fmt::Display, sync::Arc, time::Duration};
+use std::{fmt::Display, sync::Arc, time::Duration};
 
-use color_eyre::{eyre::ContextCompat, Result};
-use egui_wgpu::renderer::ScreenDescriptor;
+use eyre::{ContextCompat, Result};
+// use egui_wgpu::ScreenDescriptor;
 use glam::{Mat4, Vec2, Vec3};
 
 use pollster::FutureExt;
-use wgpu::FilterMode;
-use wgpu_profiler::{GpuProfiler, GpuTimerScopeResult};
+use wgpu::{ComputePass, FilterMode, InstanceFlags, RenderPass};
+// use wgpu_profiler::{GpuProfiler, GpuTimerScopeResult};
 use winit::{dpi::PhysicalSize, window::Window};
 
 use components::{
@@ -15,7 +15,7 @@ use components::{
         StorageWriteBindGroupLayout, StorageWriteBindGroupLayoutDyn,
     },
     world::{Read, Write},
-    Blitter, DrawIndexedIndirect, Gpu, ImageDimentions, RecordEvent, Recorder, ResizableBuffer,
+    Blitter, DrawIndexedIndirect, Gpu, ImageDimensions, RecordEvent, Recorder, ResizableBuffer,
     Watcher, World, {CameraUniform, CameraUniformBinding},
 };
 
@@ -57,7 +57,7 @@ pub const DEFAULT_SAMPLER_DESC: wgpu::SamplerDescriptor<'static> = wgpu::Sampler
 
 pub struct App {
     pub gpu: Arc<Gpu>,
-    pub surface: wgpu::Surface,
+    // pub surface: wgpu::Surface,
     pub surface_config: wgpu::SurfaceConfiguration,
     pub gbuffer: GBuffer,
     pub view_target: view_target::ViewTarget,
@@ -73,24 +73,30 @@ pub struct App {
 
     recorder: Recorder,
     screenshot_ctx: ScreenshotCtx,
-    profiler: RefCell<wgpu_profiler::GpuProfiler>,
-
-    pub(crate) egui_context: egui::Context,
-    egui_renderer: egui_wgpu::Renderer,
-    pub(crate) egui_state: egui_winit::State,
+    // profiler: RefCell<wgpu_profiler::GpuProfiler>,
+    // pub(crate) egui_context: egui::Context,
+    // egui_renderer: egui_wgpu::Renderer,
+    // pub(crate) egui_state: egui_winit::State,
 }
 
 impl App {
     pub const SAMPLE_COUNT: u32 = 1;
 
     // TODO: call resize right after
-    pub fn new(window: &Window, file_watcher: Watcher) -> Result<Self> {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::VULKAN,
-            dx12_shader_compiler: wgpu::Dx12Compiler::Fxc,
-        });
+    pub fn new<'surf>(
+        instance: wgpu::Instance,
+        window: &Window,
+        surface: &wgpu::Surface<'surf>,
+        file_watcher: Watcher,
+    ) -> Result<Self> {
+        // let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        //     backends: wgpu::Backends::VULKAN,
+        //     dx12_shader_compiler: wgpu::Dx12Compiler::Fxc,
+        //     flags: InstanceFlags::default(),
+        //     gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
+        // });
 
-        let surface = unsafe { instance.create_surface(&window) }?;
+        // let surface = unsafe { instance.create_surface(&window) }?;
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -109,8 +115,8 @@ impl App {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("Device"),
-                    features,
-                    limits,
+                    required_features: features,
+                    required_limits: limits,
                 },
                 None,
             )
@@ -119,14 +125,14 @@ impl App {
 
         let PhysicalSize { width, height } = window.inner_size();
         let format = preferred_framebuffer_format(&surface.get_capabilities(gpu.adapter()).formats);
+        let default_config = surface
+            .get_default_config(gpu.adapter(), width, height)
+            .context("Failed to create default surface config")?;
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
-            width,
-            height,
             present_mode: wgpu::PresentMode::Fifo,
-            alpha_mode: wgpu::CompositeAlphaMode::Opaque,
-            view_formats: vec![],
+            ..default_config
         };
         surface.configure(gpu.device(), &surface_config);
         let gbuffer = GBuffer::new(&gpu, surface_config.width, surface_config.height);
@@ -170,30 +176,27 @@ impl App {
         );
         let draw_cmd_bind_group = draw_cmd_buffer.create_storage_write_bind_group(&mut world);
 
-        let profiler = RefCell::new(GpuProfiler::new(
-            gpu.adapter(),
-            gpu.device(),
-            gpu.queue(),
-            4,
-        ));
+        // let profiler = RefCell::new(GpuProfiler::new(wgpu_profiler::GpuProfilerSettings {
+        //     enable_timer_queries: true,
+        //     enable_debug_groups: true,
+        //     max_num_pending_frames: 4,
+        // })?);
 
-        let egui_renderer = egui_wgpu::renderer::Renderer::new(
-            gpu.device(),
-            ViewTarget::FORMAT,
-            None,
-            Self::SAMPLE_COUNT,
-        );
-        let egui_context = egui::Context::default();
-        {
-            let mut arc_style = egui_context.style();
-            let style = Arc::make_mut(&mut arc_style);
-            style.visuals.window_shadow = egui::epaint::Shadow::NONE;
-            egui_context.set_style(style.clone());
-        }
-        let egui_state = egui_winit::State::new(window);
+        // let egui_renderer =
+        //     egui_wgpu::Renderer::new(gpu.device(), ViewTarget::FORMAT, None, Self::SAMPLE_COUNT);
+        // let egui_context = egui::Context::default();
+        // {
+        //     let mut arc_style = egui_context.style();
+        //     let style = Arc::make_mut(&mut arc_style);
+        //     style.visuals.window_shadow = egui::epaint::Shadow::NONE;
+        //     egui_context.set_style(style.clone());
+        // }
+        // let viewport_id = egui_context.viewport_id();
+        // let egui_state =
+        //     egui_winit::State::new(egui_context.clone(), viewport_id, window, None, None);
 
         Ok(Self {
-            surface,
+            // surface,
             surface_config,
             gbuffer,
             view_target,
@@ -203,17 +206,16 @@ impl App {
             draw_cmd_buffer,
             draw_cmd_bind_group,
 
-            profiler,
+            // profiler,
             blitter: Blitter::new(&world),
             screenshot_ctx: ScreenshotCtx::new(&gpu, width, height),
             recorder: Recorder::new(),
 
             world,
             gpu,
-
-            egui_renderer,
-            egui_context,
-            egui_state,
+            // egui_renderer,
+            // egui_context,
+            // egui_state,
         })
     }
 
@@ -289,14 +291,15 @@ impl App {
         Ok(())
     }
 
-    pub fn render(
+    pub fn render<'surf>(
         &mut self,
         window: &Window,
+        surface: &wgpu::Surface<'surf>,
         app_state: &AppState,
         draw: impl FnOnce(RenderContext),
     ) -> Result<(), wgpu::SurfaceError> {
-        let mut profiler = self.profiler.borrow_mut();
-        let target = self.surface.get_current_texture()?;
+        // let mut profiler = self.profiler.borrow_mut();
+        let target = surface.get_current_texture()?;
         let target_view = target.texture.create_view(&Default::default());
 
         let mut encoder = self
@@ -305,7 +308,7 @@ impl App {
                 label: Some("Main Render Encoder"),
             });
 
-        profiler.begin_scope("Main Render Scope ", &mut encoder, self.device());
+        // profiler.begin_scope("Main Render Scope ", &mut encoder, self.device());
 
         let render_context = RenderContext {
             window,
@@ -313,7 +316,7 @@ impl App {
             encoder: ProfilerCommandEncoder {
                 encoder: &mut encoder,
                 device: self.gpu.device(),
-                profiler: &mut profiler,
+                // profiler: &mut profiler,
             },
             view_target: &self.view_target,
             gbuffer: &self.gbuffer,
@@ -323,10 +326,9 @@ impl App {
             height: self.surface_config.height,
             draw_cmd_buffer: &self.draw_cmd_buffer,
             draw_cmd_bind_group: &self.draw_cmd_bind_group,
-
-            egui_context: &self.egui_context,
-            egui_renderer: &mut self.egui_renderer,
-            egui_state: &mut self.egui_state,
+            // egui_context: &self.egui_context,
+            // egui_renderer: &mut self.egui_renderer,
+            // egui_state: &mut self.egui_state,
         };
 
         draw(render_context);
@@ -339,13 +341,15 @@ impl App {
             self.surface_config.format,
         );
 
-        profiler.end_scope(&mut encoder);
-        profiler.resolve_queries(&mut encoder);
+        // profiler.end_scope(&mut encoder);
+        // profiler.resolve_queries(&mut encoder);
 
         self.gpu.queue().submit(Some(encoder.finish()));
+
+        window.pre_present_notify();
         target.present();
 
-        profiler.end_frame().ok();
+        // profiler.end_frame().ok();
 
         if self.recorder.is_active() && self.recorder.ffmpeg_installed() {
             let tx = self.recorder.sender.clone();
@@ -363,8 +367,8 @@ impl App {
         }
         self.surface_config.width = width;
         self.surface_config.height = height;
-        self.surface
-            .configure(self.gpu.device(), &self.surface_config);
+        // self.surface
+        //     .configure(self.gpu.device(), &self.surface_config);
         self.gbuffer.resize(&self.gpu, width, height);
         self.view_target = view_target::ViewTarget::new(&self.world, width, height);
         self.global_uniform.resolution = [width as f32, height as f32];
@@ -382,7 +386,7 @@ impl App {
         actions: Vec<StateAction>,
         update: impl FnOnce(UpdateContext),
     ) -> Result<()> {
-        let mut profiler = self.profiler.borrow_mut();
+        // let mut profiler = self.profiler.borrow_mut();
         let mut encoder = self
             .device()
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -393,7 +397,7 @@ impl App {
             encoder: ProfilerCommandEncoder {
                 encoder: &mut encoder,
                 device: self.device(),
-                profiler: &mut profiler,
+                // profiler: &mut profiler,
             },
             world: &self.world,
             width: self.surface_config.width,
@@ -414,19 +418,20 @@ impl App {
             .get_mut::<CameraUniformBinding>()?
             .update(self.gpu.queue(), &camera_uniform);
 
-        if state.frame_count % 500 == 0 && std::env::var("GPU_PROFILING").is_ok() {
-            let mut last_profile = vec![];
-            while let Some(profiling_data) = profiler.process_finished_frame() {
-                last_profile = profiling_data;
-            }
-            scopes_to_console_recursive(&last_profile, 0);
-            println!();
-        }
+        // let timestamp_period = self.queue().get_timestamp_period();
+        // if state.frame_count % 500 == 0 && std::env::var("GPU_PROFILING").is_ok() {
+        //     let mut last_profile = vec![];
+        //     while let Some(profiling_data) = profiler.process_finished_frame(timestamp_period) {
+        //         last_profile = profiling_data;
+        //     }
+        //     scopes_to_console_recursive(&last_profile, 0);
+        //     println!();
+        // }
 
         for action in actions {
             match action {
                 StateAction::StartRecording => {
-                    self.recorder.start(self.screenshot_ctx.image_dimentions)
+                    self.recorder.start(self.screenshot_ctx.image_dimensions)
                 }
                 StateAction::FinishRecording => self.recorder.finish(),
                 StateAction::Screenshot => {
@@ -446,7 +451,7 @@ impl App {
 
     pub fn capture_frame(
         &self,
-        callback: impl FnOnce(Arc<wgpu::Buffer>, ImageDimentions) + Send + 'static,
+        callback: impl FnOnce(Arc<wgpu::Buffer>, ImageDimensions) + Send + 'static,
     ) {
         self.screenshot_ctx.capture_frame(
             &self.world,
@@ -536,7 +541,6 @@ impl App {
             wgpu::Backend::Vulkan => "Vulkan",
             wgpu::Backend::Metal => "Metal",
             wgpu::Backend::Dx12 => "Dx12",
-            wgpu::Backend::Dx11 => "Dx11",
             wgpu::Backend::Gl => "GL",
             wgpu::Backend::BrowserWebGpu => "Browser WGPU",
         }
@@ -591,64 +595,67 @@ pub struct RenderContext<'a> {
     pub height: u32,
     pub draw_cmd_buffer: &'a ResizableBuffer<DrawIndexedIndirect>,
     pub draw_cmd_bind_group: &'a wgpu::BindGroup,
-
-    egui_context: &'a egui::Context,
-    egui_renderer: &'a mut egui_wgpu::Renderer,
-    egui_state: &'a mut egui_winit::State,
+    // egui_context: &'a egui::Context,
+    // egui_renderer: &'a mut egui_wgpu::Renderer,
+    // egui_state: &'a mut egui_winit::State,
 }
 
 impl<'a> RenderContext<'a> {
-    pub fn ui(&mut self, ui_builder: impl FnOnce(&egui::Context)) {
-        let screen_descriptor = ScreenDescriptor {
-            size_in_pixels: [self.width, self.height],
-            pixels_per_point: self.egui_state.pixels_per_point(),
-        };
-
-        let full_output = self
-            .egui_context
-            .run(self.egui_state.take_egui_input(self.window), |ctx| {
-                ui_builder(ctx)
-            });
-
-        let paint_jobs = self.egui_context.tessellate(full_output.shapes);
-        let textures_delta = full_output.textures_delta;
-
-        {
-            for (texture_id, image_delta) in &textures_delta.set {
-                self.egui_renderer.update_texture(
-                    self.gpu.device(),
-                    self.gpu.queue(),
-                    *texture_id,
-                    image_delta,
-                );
-            }
-            for texture_id in &textures_delta.free {
-                self.egui_renderer.free_texture(texture_id);
-            }
-            self.egui_renderer.update_buffers(
-                self.gpu.device(),
-                self.gpu.queue(),
-                &mut self.encoder,
-                &paint_jobs,
-                &screen_descriptor,
-            );
-
-            let mut render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("UI Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: self.view_target.main_view(),
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Load,
-                        store: true,
-                    },
-                })],
-                depth_stencil_attachment: None,
-            });
-            self.egui_renderer
-                .render(&mut render_pass, paint_jobs.as_slice(), &screen_descriptor);
-        }
-    }
+    // pub fn ui(&mut self, ui_builder: impl FnOnce(&egui::Context)) {
+    //     let screen_descriptor = ScreenDescriptor {
+    //         size_in_pixels: [self.width, self.height],
+    //         pixels_per_point: self.egui_context.pixels_per_point(),
+    //     };
+    //
+    //     let full_output = self
+    //         .egui_context
+    //         .run(self.egui_state.take_egui_input(self.window), |ctx| {
+    //             ui_builder(ctx)
+    //         });
+    //
+    //     let paint_jobs = self
+    //         .egui_context
+    //         .tessellate(full_output.shapes, self.egui_context.pixels_per_point());
+    //     let textures_delta = full_output.textures_delta;
+    //
+    //     {
+    //         for (texture_id, image_delta) in &textures_delta.set {
+    //             self.egui_renderer.update_texture(
+    //                 self.gpu.device(),
+    //                 self.gpu.queue(),
+    //                 *texture_id,
+    //                 image_delta,
+    //             );
+    //         }
+    //         for texture_id in &textures_delta.free {
+    //             self.egui_renderer.free_texture(texture_id);
+    //         }
+    //         self.egui_renderer.update_buffers(
+    //             self.gpu.device(),
+    //             self.gpu.queue(),
+    //             &mut self.encoder,
+    //             &paint_jobs,
+    //             &screen_descriptor,
+    //         );
+    //
+    //         let mut render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+    //             label: Some("UI Pass"),
+    //             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+    //                 view: self.view_target.main_view(),
+    //                 resolve_target: None,
+    //                 ops: wgpu::Operations {
+    //                     load: wgpu::LoadOp::Load,
+    //                     store: wgpu::StoreOp::Store,
+    //                 },
+    //             })],
+    //             depth_stencil_attachment: None,
+    //             timestamp_writes: None,
+    //             occlusion_query_set: None,
+    //         });
+    //         self.egui_renderer
+    //             .render(&mut render_pass, paint_jobs.as_slice(), &screen_descriptor);
+    //     }
+    // }
 }
 
 impl<'a> RenderContext<'a> {
@@ -661,44 +668,49 @@ pub struct ProfilerCommandEncoder<'a> {
     encoder: &'a mut wgpu::CommandEncoder,
 
     device: &'a wgpu::Device,
-    profiler: &'a mut GpuProfiler,
+    // profiler: &'a mut GpuProfiler,
 }
 
 impl<'a> ProfilerCommandEncoder<'a> {
     pub fn profile_start(&mut self, label: &str) {
         #[cfg(debug_assertions)]
         self.encoder.push_debug_group(label);
-        self.profiler.begin_scope(label, self.encoder, self.device);
+        // self.profiler.begin_scope(label, self.encoder, self.device);
     }
 
     pub fn profile_end(&mut self) {
-        self.profiler.end_scope(self.encoder);
-        #[cfg(debug_assertions)]
+        // self.profiler.end_scope(self.encoder);
+        // #[cfg(debug_assertions)]
         self.encoder.pop_debug_group();
     }
 
     pub fn begin_compute_pass(
         &mut self,
         desc: &wgpu::ComputePassDescriptor,
-    ) -> wgpu_profiler::scope::OwningScope<wgpu::ComputePass> {
-        wgpu_profiler::scope::OwningScope::start(
-            desc.label.unwrap_or("Compute Pass"),
-            self.profiler,
-            self.encoder.begin_compute_pass(desc),
-            self.device,
-        )
+        // ) -> wgpu_profiler::scope::OwningScope<wgpu::ComputePass> {
+    ) -> ComputePass {
+        // wgpu_profiler::scope::OwningScope::start(
+        //     desc.label.unwrap_or("Compute Pass"),
+        //     // self.profiler,
+        //     self.encoder.begin_compute_pass(desc),
+        //     self.device,
+        // )
+        self.encoder.begin_compute_pass(desc)
     }
 
     pub fn begin_render_pass<'pass>(
         &'pass mut self,
         desc: &wgpu::RenderPassDescriptor<'pass, '_>,
-    ) -> wgpu_profiler::scope::OwningScope<wgpu::RenderPass<'pass>> {
-        wgpu_profiler::scope::OwningScope::start(
-            desc.label.unwrap_or("Render Pass"),
-            self.profiler,
-            self.encoder.begin_render_pass(desc),
-            self.device,
-        )
+        // ) -> wgpu_profiler::scope::OwningScope<wgpu::RenderPass<'pass>> {
+    ) -> RenderPass<'pass> {
+        // wgpu_profiler::scope::OwningScope::start(
+        //     desc.label.unwrap_or("Render Pass"),
+        //     // self.profiler,
+        //     self.encoder.begin_render_pass(desc),
+        //     self.device,
+        // )
+
+        self.encoder.begin_render_pass(desc)
     }
 }
 
@@ -715,18 +727,18 @@ impl<'a> std::ops::DerefMut for ProfilerCommandEncoder<'a> {
     }
 }
 
-pub fn scopes_to_console_recursive(results: &[GpuTimerScopeResult], indentation: usize) {
-    for scope in results {
-        if indentation > 0 {
-            print!("{:<width$}", "|", width = 4 * indentation);
-        }
-        let time = Duration::from_micros(((scope.time.end - scope.time.start) * 1e6) as u64);
-        println!("{time:?} - {}", scope.label);
-        if !scope.nested_scopes.is_empty() {
-            scopes_to_console_recursive(&scope.nested_scopes, indentation + 1);
-        }
-    }
-}
+// pub fn scopes_to_console_recursive(results: &[GpuTimerScopeResult], indentation: usize) {
+//     for scope in results {
+//         if indentation > 0 {
+//             print!("{:<width$}", "|", width = 4 * indentation);
+//         }
+//         let time = Duration::from_micros(((scope.time.end - scope.time.start) * 1e6) as u64);
+//         println!("{time:?} - {}", scope.label);
+//         if !scope.nested_scopes.is_empty() {
+//             scopes_to_console_recursive(&scope.nested_scopes, indentation + 1);
+//         }
+//     }
+// }
 
 fn preferred_framebuffer_format(formats: &[wgpu::TextureFormat]) -> wgpu::TextureFormat {
     for &format in formats {

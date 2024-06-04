@@ -18,7 +18,7 @@ impl<'a> PostProcessWrite<'a> {
             resolve_target: None,
             ops: wgpu::Operations {
                 load: wgpu::LoadOp::Clear(color),
-                store: true,
+                store: wgpu::StoreOp::Store,
             },
         }
     }
@@ -98,7 +98,7 @@ impl ViewTarget {
             resolve_target: None,
             ops: wgpu::Operations {
                 load: wgpu::LoadOp::Clear(color),
-                store: true,
+                store: wgpu::StoreOp::Store,
             },
         }
     }

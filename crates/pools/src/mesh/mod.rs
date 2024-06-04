@@ -82,7 +82,7 @@ pub struct MeshPool {
 }
 
 impl MeshPool {
-    pub const HORISONTAL_PLANE_MESH: MeshId = MeshId::new(0);
+    pub const HORIZONTAL_PLANE_MESH: MeshId = MeshId::new(0);
     pub const VERTICAL_PLANE_MESH: MeshId = MeshId::new(1);
     pub const SPHERE_1_MESH: MeshId = MeshId::new(2);
     pub const SPHERE_10_MESH: MeshId = MeshId::new(3);

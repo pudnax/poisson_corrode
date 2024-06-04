@@ -1,7 +1,8 @@
 use std::time::Duration;
 
-use color_eyre::Result;
+use eyre::Result;
 use voidin::*;
+use winit::window::WindowAttributes;
 
 struct Demo {
     visibility_pass: pass::visibility::Visibility,
@@ -32,7 +33,7 @@ impl Example for Demo {
 
         instances.push(Instance::new(
             Mat4::from_scale(Vec3::splat(200.)),
-            MeshPool::HORISONTAL_PLANE_MESH,
+            MeshPool::HORIZONTAL_PLANE_MESH,
             MaterialId::default(),
         ));
 
@@ -102,19 +103,19 @@ impl Example for Demo {
             },
         );
 
-        ctx.ui(|egui_ctx| {
-            egui::Window::new("debug").show(egui_ctx, |ui| {
-                ui.label(format!(
-                    "Fps: {:.04?}",
-                    Duration::from_secs_f64(ctx.app_state.dt)
-                ));
-            });
-        });
+        // ctx.ui(|egui_ctx| {
+        //     egui::Window::new("debug").show(egui_ctx, |ui| {
+        //         ui.label(format!(
+        //             "Fps: {:.04?}",
+        //             Duration::from_secs_f64(ctx.app_state.dt)
+        //         ));
+        //     });
+        // });
     }
 }
 
 fn main() -> Result<()> {
-    let window = WindowBuilder::new();
+    let window = WindowAttributes::default();
 
     let camera = Camera::new(vec3(0., 6., 0.), 0., 0.);
     run::<Demo>(window, camera)

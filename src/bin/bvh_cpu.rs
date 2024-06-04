@@ -2,11 +2,12 @@ use std::{array, time::Duration};
 
 use bvh::{Bvh, Dist::*, Ray};
 
-use color_eyre::Result;
+use eyre::Result;
 use glam::Vec4Swizzles;
 use half::f16;
 use rand::Rng;
 use voidin::*;
+use winit::window::WindowAttributes;
 
 const WIDTH: usize = 640;
 const HEIGHT: usize = 640;
@@ -115,19 +116,19 @@ impl Example for Demo {
             },
         );
 
-        ctx.ui(|egui_ctx| {
-            egui::Window::new("debug").show(egui_ctx, |ui| {
-                ui.label(format!(
-                    "Fps: {:.04?}",
-                    Duration::from_secs_f64(ctx.app_state.dt)
-                ));
-            });
-        });
+        // ctx.ui(|egui_ctx| {
+        //     egui::Window::new("debug").show(egui_ctx, |ui| {
+        //         ui.label(format!(
+        //             "Fps: {:.04?}",
+        //             Duration::from_secs_f64(ctx.app_state.dt)
+        //         ));
+        //     });
+        // });
     }
 }
 
 fn main() -> Result<()> {
-    let window = WindowBuilder::new()
+    let window = WindowAttributes::default()
         .with_inner_size(LogicalSize::new(WIDTH as u32, HEIGHT as u32))
         .with_resizable(false);
 

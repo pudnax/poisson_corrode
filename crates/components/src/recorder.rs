@@ -1,5 +1,5 @@
-use color_eyre::eyre::Result;
 use crossbeam_channel::{Receiver, Sender};
+use eyre::Result;
 use std::{
     fs::File,
     io::{BufWriter, Write},
@@ -12,13 +12,13 @@ use std::{
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
-use crate::{create_folder, ImageDimentions, SCREENSHOTS_FOLDER, VIDEO_FOLDER};
+use crate::{create_folder, ImageDimensions, SCREENSHOTS_FOLDER, VIDEO_FOLDER};
 
 pub enum RecordEvent {
-    Start(ImageDimentions),
+    Start(ImageDimensions),
     Record(Arc<wgpu::Buffer>),
     Finish,
-    Screenshot((Arc<wgpu::Buffer>, ImageDimentions)),
+    Screenshot((Arc<wgpu::Buffer>, ImageDimensions)),
 }
 
 pub struct Recorder {
@@ -64,7 +64,7 @@ impl Recorder {
         self.ffmpeg_installed
     }
 
-    pub fn start(&mut self, dims: ImageDimentions) {
+    pub fn start(&mut self, dims: ImageDimensions) {
         self.is_active = true;
         self.send(RecordEvent::Start(dims));
     }
@@ -84,10 +84,10 @@ impl Recorder {
 
 struct RecorderThread {
     process: Child,
-    image_dimentions: ImageDimentions,
+    image_dimensions: ImageDimensions,
 }
 
-fn new_ffmpeg_command(image_dimentions: ImageDimentions, filename: &str) -> Result<RecorderThread> {
+fn new_ffmpeg_command(image_dimensions: ImageDimensions, filename: &str) -> Result<RecorderThread> {
     #[rustfmt::skip]
     let args = [
         "-framerate", "60",
@@ -113,8 +113,8 @@ fn new_ffmpeg_command(image_dimentions: ImageDimentions, filename: &str) -> Resu
         .arg("-video_size")
         .arg(format!(
             "{}x{}",
-            image_dimentions.unpadded_bytes_per_row / 4,
-            image_dimentions.height
+            image_dimensions.unpadded_bytes_per_row / 4,
+            image_dimensions.height
         ))
         .args(args)
         .arg(filename)
@@ -133,7 +133,7 @@ fn new_ffmpeg_command(image_dimentions: ImageDimentions, filename: &str) -> Resu
 
     Ok(RecorderThread {
         process: child,
-        image_dimentions,
+        image_dimensions,
     })
 }
 
@@ -142,7 +142,7 @@ fn record_thread(rx: Receiver<RecordEvent>) {
 
     while let Ok(event) = rx.recv() {
         match event {
-            RecordEvent::Start(image_dimentions) => {
+            RecordEvent::Start(image_dimensions) => {
                 create_folder(VIDEO_FOLDER).unwrap();
                 let dir_path = Path::new(VIDEO_FOLDER);
                 let filename = dir_path.join(format!(
@@ -150,16 +150,16 @@ fn record_thread(rx: Receiver<RecordEvent>) {
                     chrono::Local::now().format("%d-%m-%Y-%H-%M-%S")
                 ));
                 recorder =
-                    Some(new_ffmpeg_command(image_dimentions, filename.to_str().unwrap()).unwrap());
+                    Some(new_ffmpeg_command(image_dimensions, filename.to_str().unwrap()).unwrap());
             }
             RecordEvent::Record(frame) => {
                 if let Some(ref mut recorder) = recorder {
                     let writer = recorder.process.stdin.as_mut().unwrap();
                     let mut writer = BufWriter::new(writer);
 
-                    let padded_bytes = recorder.image_dimentions.padded_bytes_per_row as _;
-                    let unpadded_bytes = recorder.image_dimentions.unpadded_bytes_per_row as _;
-                    let frame_slice = frame.slice(0..recorder.image_dimentions.linear_size());
+                    let padded_bytes = recorder.image_dimensions.padded_bytes_per_row as _;
+                    let unpadded_bytes = recorder.image_dimensions.unpadded_bytes_per_row as _;
+                    let frame_slice = frame.slice(0..recorder.image_dimensions.linear_size());
                     let frame = frame_slice.get_mapped_range();
                     for chunk in frame
                         .chunks(padded_bytes)
@@ -177,10 +177,10 @@ fn record_thread(rx: Receiver<RecordEvent>) {
                 recorder = None;
                 eprintln!("Recording finished");
             }
-            RecordEvent::Screenshot((frame, image_dimentions)) => {
-                let frame_slice = frame.slice(0..image_dimentions.linear_size());
+            RecordEvent::Screenshot((frame, image_dimensions)) => {
+                let frame_slice = frame.slice(0..image_dimensions.linear_size());
                 let frame = frame_slice.get_mapped_range();
-                match save_screenshot(&frame, image_dimentions) {
+                match save_screenshot(&frame, image_dimensions) {
                     Ok(_) => {}
                     Err(err) => {
                         eprintln!("{err}")
@@ -191,7 +191,7 @@ fn record_thread(rx: Receiver<RecordEvent>) {
     }
 }
 
-pub fn save_screenshot(frame: &[u8], image_dimentions: ImageDimentions) -> Result<()> {
+pub fn save_screenshot(frame: &[u8], image_dimensions: ImageDimensions) -> Result<()> {
     let now = Instant::now();
     let screenshots_folder = Path::new(SCREENSHOTS_FOLDER);
     create_folder(screenshots_folder)?;
@@ -202,11 +202,11 @@ pub fn save_screenshot(frame: &[u8], image_dimentions: ImageDimentions) -> Resul
     let file = File::create(path)?;
     let w = BufWriter::new(file);
     let mut encoder =
-        png::Encoder::new(w, image_dimentions.width as _, image_dimentions.height as _);
+        png::Encoder::new(w, image_dimensions.width as _, image_dimensions.height as _);
     encoder.set_color(png::ColorType::Rgba);
     encoder.set_depth(png::BitDepth::Eight);
-    let padded_bytes = image_dimentions.padded_bytes_per_row as _;
-    let unpadded_bytes = image_dimentions.unpadded_bytes_per_row as _;
+    let padded_bytes = image_dimensions.padded_bytes_per_row as _;
+    let unpadded_bytes = image_dimensions.unpadded_bytes_per_row as _;
     let mut writer = encoder
         .write_header()?
         .into_stream_writer_with_size(unpadded_bytes)?;

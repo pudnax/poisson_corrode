@@ -4,21 +4,21 @@ use wgpu::MapMode;
 
 use crate::Gpu;
 
-use components::{world::World, Blitter, ImageDimentions};
+use components::{world::World, Blitter, ImageDimensions};
 
 pub struct ScreenshotCtx {
-    pub image_dimentions: ImageDimentions,
+    pub image_dimensions: ImageDimensions,
     texture: wgpu::Texture,
 }
 
 impl ScreenshotCtx {
     pub fn new(gpu: &Gpu, width: u32, height: u32) -> Self {
-        let image_dimentions =
-            ImageDimentions::new(width, height, wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+        let image_dimensions =
+            ImageDimensions::new(width, height, wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
 
         let texture = gpu.device().create_texture(&wgpu::TextureDescriptor {
             label: Some("Screen Copy Texture"),
-            size: image_dimentions.into(),
+            size: image_dimensions.into(),
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8UnormSrgb,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
@@ -28,13 +28,13 @@ impl ScreenshotCtx {
         });
 
         Self {
-            image_dimentions,
+            image_dimensions,
             texture,
         }
     }
 
     pub fn resize(&mut self, gpu: &Gpu, width: u32, height: u32) {
-        let new_dims = ImageDimentions::new(width, height, wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+        let new_dims = ImageDimensions::new(width, height, wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
 
         self.texture = gpu.device().create_texture(&wgpu::TextureDescriptor {
             label: Some("Screen Copy Texture"),
@@ -50,7 +50,7 @@ impl ScreenshotCtx {
             sample_count: 1,
             view_formats: &[],
         });
-        self.image_dimentions = new_dims;
+        self.image_dimensions = new_dims;
     }
 
     pub fn capture_frame(
@@ -58,9 +58,9 @@ impl ScreenshotCtx {
         world: &World,
         blitter: &Blitter,
         src_texture: &wgpu::BindGroup,
-        callback: impl FnOnce(Arc<wgpu::Buffer>, ImageDimentions) + Send + 'static,
+        callback: impl FnOnce(Arc<wgpu::Buffer>, ImageDimensions) + Send + 'static,
     ) {
-        let dims = self.image_dimentions;
+        let dims = self.image_dimensions;
 
         let download = Arc::new(world.device().create_buffer(&wgpu::BufferDescriptor {
             size: dims.linear_size(),

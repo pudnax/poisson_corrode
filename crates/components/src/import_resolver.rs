@@ -2,7 +2,7 @@
 
 use ahash::{AHashMap, AHashSet};
 use clean_path::Clean;
-use color_eyre::eyre::{self, bail, eyre, Context};
+use eyre::{bail, eyre, Context};
 use std::{
     path::{Path, PathBuf},
     rc::Rc,
@@ -86,7 +86,7 @@ impl ImportResolver {
         }
     }
 
-    pub fn populate(&mut self, path: impl AsRef<Path>) -> color_eyre::Result<ResolvedFile> {
+    pub fn populate(&mut self, path: impl AsRef<Path>) -> eyre::Result<ResolvedFile> {
         let mut path_stack = Vec::new();
         let mut visited_stack = AHashSet::new();
         let mut resolved_files = AHashMap::default();
@@ -97,7 +97,7 @@ impl ImportResolver {
             resolved_files: &mut AHashMap<PathBuf, Rc<ResolvedFile>>,
             path_stack: &mut Vec<PathBuf>,
             visited_stack: &mut AHashSet<PathBuf>,
-        ) -> color_eyre::Result<Rc<ResolvedFile>> {
+        ) -> eyre::Result<Rc<ResolvedFile>> {
             let path = path.as_ref().clean();
 
             path_stack.push(path.clone());

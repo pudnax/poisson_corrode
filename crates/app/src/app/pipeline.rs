@@ -6,11 +6,10 @@ use std::{
 };
 
 use ahash::{AHashMap, AHashSet};
-use color_eyre::{
-    eyre::{eyre, Context},
-    Result,
-};
 use either::Either::{self, Left, Right};
+use eyre::{
+    Result, {eyre, Context},
+};
 use pollster::FutureExt;
 use slotmap::{SecondaryMap, SlotMap};
 use wgpu::{
@@ -420,11 +419,13 @@ impl RenderPipelineDescriptor {
                 buffers: &vertex_buffer_layouts,
                 entry_point: &self.vertex.entry_point,
                 module,
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: self.fragment.as_ref().map(|state| wgpu::FragmentState {
                 entry_point: &state.entry_point,
                 module,
                 targets: &state.targets,
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
         };
         device.create_render_pipeline(&raw_descriptor)
@@ -552,6 +553,7 @@ impl ComputePipelineDescriptor {
             layout: layout.as_ref(),
             module,
             entry_point: self.entry_point.as_ref(),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
         };
         device.create_compute_pipeline(&raw_descriptor)
     }

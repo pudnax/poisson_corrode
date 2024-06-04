@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use color_eyre::Result;
+use eyre::Result;
 use pools::MeshPool;
 
 use crate::{
@@ -72,10 +72,12 @@ impl Pass for ShadingPass {
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Load,
-                    store: true,
+                    store: wgpu::StoreOp::Store,
                 },
             })],
             depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
         });
 
         rpass.set_pipeline(arena.get_pipeline(self.pipeline));

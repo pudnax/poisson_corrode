@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use color_eyre::{eyre::eyre, eyre::ContextCompat, Result};
+use eyre::{eyre, ContextCompat, Result};
 use gltf::{
     accessor::{DataType, Dimensions},
     image::Format,

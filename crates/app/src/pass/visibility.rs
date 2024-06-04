@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use color_eyre::Result;
+use eyre::Result;
 use components::bind_group_layout::StorageWriteBindGroupLayout;
 use components::world::World;
 use components::{DrawIndexedIndirect, NonZeroSized, ResizableBuffer};
@@ -168,10 +168,12 @@ impl Pass for Geometry {
                 view: &resources.gbuffer.depth,
                 depth_ops: Some(wgpu::Operations {
                     load: wgpu::LoadOp::Clear(0.0),
-                    store: true,
+                    store: wgpu::StoreOp::Store,
                 }),
                 stencil_ops: None,
             }),
+            timestamp_writes: None,
+            occlusion_query_set: None,
         });
 
         rpass.set_pipeline(arena.get_pipeline(self.pipeline));
@@ -242,6 +244,7 @@ impl Pass for EmitDraws {
         let instances = world.unwrap::<InstancePool>();
         let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("Emit Draws Pass"),
+            timestamp_writes: None,
         });
 
         cpass.set_pipeline(arena.get_pipeline(self.pipeline));

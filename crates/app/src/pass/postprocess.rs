@@ -3,7 +3,7 @@ use crate::{
     GlobalUniformBinding, ProfilerCommandEncoder, ViewTarget, WrappedBindGroupLayout,
     DEFAULT_SAMPLER_DESC,
 };
-use color_eyre::Result;
+use eyre::Result;
 use components::{bind_group_layout::SingleTextureBindGroupLayout, world::World};
 use std::path::Path;
 
@@ -88,6 +88,8 @@ impl Pass for PostProcess {
                 },
             ))],
             depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
         });
         pass.set_bind_group(0, &global_ubo.binding, &[]);
         pass.set_bind_group(1, post_process_target.source_binding, &[]);
