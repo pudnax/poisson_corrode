@@ -63,149 +63,6 @@ pub trait Example: 'static + Sized {
     fn render(&mut self, ctx: RenderContext);
 }
 
-// pub fn run_default<E: Example>() -> eyre::Result<()> {
-//     let window = winit::window::WindowBuilder::new()
-//         .with_title(E::name())
-//         .with_inner_size(LogicalSize::new(1280, 1024));
-//
-//     let camera = Camera::new(vec3(0., 0., 0.), 0., 0.);
-//     run::<E>(window, camera)
-// }
-//
-// pub fn run<E: Example>(window_builder: WindowBuilder, mut camera: Camera) -> eyre::Result<()> {
-//     eyre::install()?;
-//     env_logger::builder()
-//         .parse_env(env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "info"))
-//         .filter_module("wgpu_core", log::LevelFilter::Warn)
-//         .filter_module("wgpu_hal", log::LevelFilter::Warn)
-//         .filter_module("MANGOHUD", log::LevelFilter::Warn)
-//         .filter_module("winit", log::LevelFilter::Warn)
-//         .filter_module("naga", log::LevelFilter::Error)
-//         .init();
-//
-//     let event_loop = winit::event_loop::EventLoopBuilder::with_user_event().build()?;
-//     let window = window_builder.with_title(E::name()).build(&event_loop)?;
-//
-//     let PhysicalSize { width, height } = window.inner_size();
-//     camera.aspect = width as f32 / height as f32;
-//
-//     let keyboard_map = {
-//         use KeyCode::*;
-//         KeyboardMap::new()
-//             .bind(KeyW, KeyMap::new("move_fwd", 1.0))
-//             .bind(KeyS, KeyMap::new("move_fwd", -1.0))
-//             .bind(KeyD, KeyMap::new("move_right", 1.0))
-//             .bind(KeyA, KeyMap::new("move_right", -1.0))
-//             .bind(KeyQ, KeyMap::new("move_up", 1.0))
-//             .bind(KeyE, KeyMap::new("move_up", -1.0))
-//             .bind(ShiftLeft, KeyMap::new("boost", 1.0))
-//             .bind(ControlLeft, KeyMap::new("boost", -1.0))
-//     };
-//     let mut app_state = AppState::new(camera, Some(keyboard_map));
-//
-//     let watcher = Watcher::new(event_loop.create_proxy())?;
-//
-//     let mut app = App::new(&window, watcher)?;
-//     let info = app.get_info();
-//     println!("{info}");
-//
-//     let mut example = E::init(&mut app)?;
-//
-//     let now = std::time::Instant::now();
-//     app.setup_scene(&mut example)?;
-//     println!("Scene finished: {:?}", now.elapsed());
-//
-//     let mut current_instant = Instant::now();
-//     let mut accumulated_time = 0.;
-//     let mut fps_counter = FpsCounter::new();
-//
-//     event_loop.run(move |event, elwt| {
-//         *control_flow = ControlFlow::Wait;
-//
-//         match event {
-//             Event::MainEventsCleared => {
-//                 let new_instant = Instant::now();
-//                 let frame_time = new_instant
-//                     .duration_since(current_instant)
-//                     .as_secs_f64()
-//                     .min(MAX_FRAME_TIME);
-//                 current_instant = new_instant;
-//
-//                 let mut actions = vec![];
-//                 accumulated_time += frame_time;
-//                 while accumulated_time >= FIXED_TIME_STEP {
-//                     app_state.input.tick();
-//                     actions.extend(app_state.update(FIXED_TIME_STEP));
-//
-//                     accumulated_time -= FIXED_TIME_STEP;
-//                 }
-//                 app.update(&mut app_state, actions, |ctx| example.update(ctx))
-//                     .unwrap();
-//                 app_state.input.mouse_state.refresh();
-//             }
-//             Event::RedrawEventsCleared => window.request_redraw(),
-//             Event::RedrawRequested(_) => {
-//                 app_state.dt = fps_counter.record();
-//                 if let Err(err) = app.render(&window, &app_state, |ctx| example.render(ctx)) {
-//                     eprintln!("get_current_texture error: {:?}", err);
-//                     match err {
-//                         SurfaceError::Lost | SurfaceError::Outdated => {
-//                             warn!("render: Outdated Surface");
-//                             app.surface.configure(app.device(), &app.surface_config);
-//                             window.request_redraw();
-//                         }
-//                         SurfaceError::OutOfMemory => elwt.control_flow(),
-//                         SurfaceError::Timeout => warn!("Surface Timeout"),
-//                     }
-//                 }
-//             }
-//             Event::WindowEvent {
-//                 event: WindowEvent::Resized(PhysicalSize { width, height }), // | WindowEvent::ScaleFactorChanged {
-//                                                                              //     new_inner_size: &mut PhysicalSize { width, height },
-//                                                                              //     ..
-//                                                                              // }
-//                 ..
-//             } => {
-//                 if width != 0 && height != 0 {
-//                     app_state.camera.aspect = width as f32 / height as f32;
-//                     example.resize(&app.gpu, width, height);
-//                     app.resize(width, height);
-//                 }
-//             }
-//             Event::WindowEvent {
-//                 event:
-//                     WindowEvent::CloseRequested
-//                     | WindowEvent::KeyboardInput {
-//                         event:
-//                             KeyEvent {
-//                                 logical_key: Key::Named(NamedKey::Escape),
-//                                 state: ElementState::Pressed,
-//                                 ..
-//                             },
-//                         ..
-//                     },
-//                 ..
-//             } => *control_flow = ControlFlow::Exit,
-//             Event::DeviceEvent { event, .. } => app_state.input.on_device_event(&event),
-//             Event::WindowEvent { event, .. } => {
-//                 if app.egui_state.on_event(&app.egui_context, &event).consumed {
-//                     return;
-//                 }
-//
-//                 app_state.input.on_window_event(&window, &event);
-//             }
-//             Event::UserEvent(path) => {
-//                 app.handle_events(path);
-//             }
-//             Event::LoopDestroyed => {
-//                 println!("// End from the loop. Bye bye~⏎ ");
-//             }
-//             _ => {}
-//         }
-//     });
-//     Ok(())
-// }
-
 pub fn run_default<E: Example>() -> eyre::Result<()> {
     let camera = Camera::new(vec3(0., 0., 0.), 0., 0.);
     run::<E>(WindowAttributes::default(), camera)
@@ -225,7 +82,9 @@ pub fn run<E: Example>(
         .init();
 
     let event_loop = winit::event_loop::EventLoop::<PathBuf>::with_user_event().build()?;
-    event_loop.set_control_flow(ControlFlow::Wait);
+    event_loop.set_control_flow(ControlFlow::wait_duration(Duration::from_secs_f64(
+        FIXED_TIME_STEP,
+    )));
 
     window_attributes = window_attributes.with_title(E::name());
 
@@ -323,38 +182,43 @@ impl<'a, E: Example> ApplicationHandler<PathBuf> for AppRunner<'a, E> {
     fn new_events(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
-        _cause: winit::event::StartCause,
+        cause: winit::event::StartCause,
     ) {
-        dbg!(_cause);
-        let new_instant = Instant::now();
-        let frame_time = new_instant
-            .duration_since(self.current_instant)
-            .as_secs_f64()
-            .min(MAX_FRAME_TIME);
-        self.current_instant = new_instant;
+        if !matches!(
+            cause,
+            winit::event::StartCause::WaitCancelled {
+                start: _,
+                requested_resume: _
+            }
+        ) {
+            let new_instant = Instant::now();
+            let frame_time = new_instant
+                .duration_since(self.current_instant)
+                .as_secs_f64()
+                .min(MAX_FRAME_TIME);
+            self.current_instant = new_instant;
 
-        let mut actions = vec![];
-        self.accumulated_time += frame_time;
-        if let Some((_, window)) = self.window.as_ref() {
+            let mut actions = vec![];
+            self.accumulated_time += frame_time;
             if self.accumulated_time >= FIXED_TIME_STEP {
                 event_loop.set_control_flow(ControlFlow::WaitUntil(
-                    new_instant + Duration::from_secs_f64(FIXED_TIME_STEP),
+                    new_instant + Duration::from_secs_f64((FIXED_TIME_STEP - frame_time).max(0.)),
                 ));
-                window.request_redraw();
             }
-        }
-        while self.accumulated_time >= FIXED_TIME_STEP {
-            self.state.input.tick();
-            actions.extend(self.state.update(FIXED_TIME_STEP));
+            while self.accumulated_time >= FIXED_TIME_STEP {
+                self.state.input.tick();
+                actions.extend(self.state.update(FIXED_TIME_STEP));
 
-            self.accumulated_time -= FIXED_TIME_STEP;
+                self.accumulated_time -= FIXED_TIME_STEP;
+            }
+            self.state.dt = frame_time;
+            if let Some((renderer, example)) = self.renderer.as_mut() {
+                renderer
+                    .update(&mut self.state, actions, |ctx| example.update(ctx))
+                    .unwrap();
+            }
+            self.state.input.mouse_state.refresh();
         }
-        if let Some((renderer, example)) = self.renderer.as_mut() {
-            renderer
-                .update(&mut self.state, actions, |ctx| example.update(ctx))
-                .unwrap();
-        }
-        self.state.input.mouse_state.refresh();
     }
 
     fn window_event(
@@ -391,7 +255,7 @@ impl<'a, E: Example> ApplicationHandler<PathBuf> for AppRunner<'a, E> {
                 }
             }
             WindowEvent::RedrawRequested => {
-                self.state.dt = self.fps_counter.record();
+                self.fps_counter.record();
                 if let Err(err) =
                     render.render(window, surface, &self.state, |ctx| example.render(ctx))
                 {
@@ -406,7 +270,7 @@ impl<'a, E: Example> ApplicationHandler<PathBuf> for AppRunner<'a, E> {
                         SurfaceError::Timeout => warn!("Surface Timeout"),
                     }
                 }
-                // window.request_redraw();
+                window.request_redraw();
             }
             _ => {}
         }

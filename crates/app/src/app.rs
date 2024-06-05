@@ -667,7 +667,7 @@ impl<'a> RenderContext<'a> {
 pub struct ProfilerCommandEncoder<'a> {
     encoder: &'a mut wgpu::CommandEncoder,
 
-    device: &'a wgpu::Device,
+    _device: &'a wgpu::Device,
     // profiler: &'a mut GpuProfiler,
 }
 
