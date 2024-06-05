@@ -1,4 +1,4 @@
-use std::{array, time::Duration};
+use std::array;
 
 use bvh::{Bvh, Dist::*, Ray};
 

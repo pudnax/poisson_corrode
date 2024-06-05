@@ -1,11 +1,11 @@
-use std::{fmt::Display, sync::Arc, time::Duration};
+use std::{fmt::Display, sync::Arc};
 
 use eyre::{ContextCompat, Result};
 // use egui_wgpu::ScreenDescriptor;
 use glam::{Mat4, Vec2, Vec3};
 
 use pollster::FutureExt;
-use wgpu::{ComputePass, FilterMode, InstanceFlags, RenderPass};
+use wgpu::{ComputePass, FilterMode, RenderPass};
 // use wgpu_profiler::{GpuProfiler, GpuTimerScopeResult};
 use winit::{dpi::PhysicalSize, window::Window};
 
@@ -49,7 +49,7 @@ pub const DEFAULT_SAMPLER_DESC: wgpu::SamplerDescriptor<'static> = wgpu::Sampler
     min_filter: FilterMode::Linear,
     mipmap_filter: FilterMode::Linear,
     lod_min_clamp: 0.0,
-    lod_max_clamp: std::f32::MAX,
+    lod_max_clamp: f32::MAX,
     compare: None,
     anisotropy_clamp: 1,
     border_color: None,
@@ -83,10 +83,10 @@ impl App {
     pub const SAMPLE_COUNT: u32 = 1;
 
     // TODO: call resize right after
-    pub fn new<'surf>(
+    pub fn new(
         instance: wgpu::Instance,
         window: &Window,
-        surface: &wgpu::Surface<'surf>,
+        surface: &wgpu::Surface<'_>,
         file_watcher: Watcher,
     ) -> Result<Self> {
         // let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -102,7 +102,7 @@ impl App {
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 force_fallback_adapter: false,
-                compatible_surface: Some(&surface),
+                compatible_surface: Some(surface),
             })
             .block_on()
             .context("Failed to create Adapter")?;
@@ -291,10 +291,10 @@ impl App {
         Ok(())
     }
 
-    pub fn render<'surf>(
+    pub fn render(
         &mut self,
         window: &Window,
-        surface: &wgpu::Surface<'surf>,
+        surface: &wgpu::Surface<'_>,
         app_state: &AppState,
         draw: impl FnOnce(RenderContext),
     ) -> Result<(), wgpu::SurfaceError> {

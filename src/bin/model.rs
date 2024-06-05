@@ -1,4 +1,3 @@
-use std::time::Duration;
 
 use app::make_uv_sphere;
 use eyre::Result;
